@@ -107,6 +107,7 @@ func (m *Model) SetSize(width, height int) {
 	m.width = width
 	m.height = height
 	m.itemsPerLine = width / m.itemWidth
+	m.numLines = len(m.items) / m.itemsPerLine
 }
 
 var itemStyle = lipgloss.NewStyle().Bold(true).
@@ -127,8 +128,6 @@ func (m Model) View() string {
 	}
 
 	output.WriteString("List of test environments" + "\n\n")
-
-	m.numLines = len(m.items) / m.itemsPerLine
 
 	if len(m.items)%m.itemsPerLine > 0 {
 		m.numLines++
