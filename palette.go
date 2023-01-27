@@ -97,13 +97,13 @@ func New(items []Item, width, height int) Model {
 		items:     items,
 		itemWidth: maxItemWidth,
 		focus:     Position{h: 0, v: 0},
-		numLines:  1,
 		styles:    styles,
 		KeyMap:    defaultKeyMap(),
 		Help:      help.New(),
 	}
 
 	m.calcItemsPerLine()
+	m.calcNumberOfLines()
 
 	return m
 }
@@ -112,6 +112,14 @@ func New(items []Item, width, height int) Model {
 // based on scren and item width
 func (m *Model) calcItemsPerLine() {
 	m.itemsPerLine = int(math.Max(1, float64(m.width)/float64(m.itemWidth)))
+}
+
+// calcNumberOfLines calculates a number of lines on the screen
+func (m *Model) calcNumberOfLines() {
+	m.numLines = len(m.items) / m.itemsPerLine
+	if len(m.items)%m.itemsPerLine > 0 {
+		m.numLines++
+	}
 }
 
 func defaultKeyMap() KeyMap {
@@ -139,7 +147,7 @@ func (m *Model) SetSize(width, height int) {
 	m.width = width
 	m.height = height
 	m.calcItemsPerLine()
-	m.numLines = len(m.items) / m.itemsPerLine
+	m.calcNumberOfLines()
 }
 
 func (m Model) View() string {
@@ -153,26 +161,28 @@ func (m Model) View() string {
 
 	output.WriteString("List of test environments" + "\n\n")
 
-	if len(m.items)%m.itemsPerLine > 0 {
-		m.numLines++
-	}
-
-	for i := 0; i < m.numLines; i++ {
+	for lineNumber := 0; lineNumber < m.numLines; lineNumber++ {
 		itemsRow := ""
 
-		for j := 0; j+i*m.itemsPerLine < len(m.items); j++ {
-			curItem := m.items[j+i*m.itemsPerLine]
-			curItem.setPosition(j, i) // h: j, v: i
+		start := lineNumber * m.itemsPerLine
+		end := start + m.itemsPerLine
+		if end > len(m.items) {
+			end = len(m.items)
+		}
+
+		for columnNumber, item := range m.items[start:end] {
+			item.setPosition(lineNumber, columnNumber)
 
 			style := m.styles.Item
-			if curItem.inFocus(m.focus) {
+			if item.inFocus(m.focus) {
 				style = m.styles.ActiveItem
 			}
 
 			itemsRow = lipgloss.JoinHorizontal(lipgloss.Top, itemsRow,
-				style.Width(m.itemWidth).Render(curItem.Title),
+				style.Width(m.itemWidth).Render(item.Title),
 			)
 		}
+
 		output.WriteString(itemsRow + "\n\n")
 	}
 
@@ -183,37 +193,29 @@ func (m Model) View() string {
 
 // CursorLeft moves the cursor left
 func (m *Model) CursorLeft() {
-	if m.focus.h-1 < 0 {
-		return
-	} else {
-		m.focus.h--
+	if m.focus.v-1 >= 0 {
+		m.focus.v--
 	}
 }
 
 // CursorUp moves the cursor up
 func (m *Model) CursorUp() {
-	if m.focus.v-1 < 0 {
-		return
-	} else {
-		m.focus.v--
+	if m.focus.h-1 >= 0 {
+		m.focus.h--
 	}
 }
 
 // CursorRight moves the cursor right
 func (m *Model) CursorRight() {
-	if m.focus.h+1 > m.itemsPerLine {
-		return
-	} else {
-		m.focus.h++
+	if m.focus.v+1 < m.itemsPerLine {
+		m.focus.v++
 	}
 }
 
 // CursorDown moves the cursor down
 func (m *Model) CursorDown() {
-	if m.focus.v+1 > m.numLines {
-		return
-	} else {
-		m.focus.v++
+	if m.focus.h+1 < m.numLines {
+		m.focus.h++
 	}
 }
 
