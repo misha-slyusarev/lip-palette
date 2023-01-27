@@ -2,7 +2,6 @@ package palette
 
 import (
 	"fmt"
-	"math"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/help"
@@ -120,10 +119,15 @@ func New(items []Item, width, height int) Model {
 	return m
 }
 
-// calcItemsPerLine calculates a number of items per line
-// based on scren and item width
+// calcItemsPerLine calculates the number of items per line
+// based on the screen and item width
 func (m *Model) calcItemsPerLine() {
-	m.itemsPerLine = int(math.Max(1, float64(m.width)/float64(m.itemWidth)))
+	ipl := m.width / m.itemWidth
+	if m.width%m.itemWidth > 0 {
+		ipl--
+	}
+
+	m.itemsPerLine = max(1, ipl)
 }
 
 // calcNumberOfLines calculates a number of lines on the screen
@@ -230,7 +234,7 @@ func (m *Model) CursorRight() {
 		return
 	}
 
-	if m.focus.row == m.numLines-1 {
+	if m.focus.row == m.numLines-1 && len(m.items)%m.itemsPerLine > 0 {
 		if len(m.items)%m.itemsPerLine-1 < m.focus.col {
 			m.focus.col--
 		}
@@ -246,7 +250,7 @@ func (m *Model) CursorDown() {
 		return
 	}
 
-	if m.focus.row == m.numLines-1 {
+	if m.focus.row == m.numLines-1 && len(m.items)%m.itemsPerLine > 0 {
 		if len(m.items)%m.itemsPerLine-1 < m.focus.col {
 			m.focus.row--
 		}
@@ -290,4 +294,11 @@ func (m *Model) moveCursor(msg tea.Msg) tea.Cmd {
 	}
 
 	return tea.Batch(cmds...)
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
