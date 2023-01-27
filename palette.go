@@ -18,9 +18,9 @@ type Item struct {
 	position Position
 }
 
-func (i *Item) setPosition(horizontal int, vertical int) {
-	i.position.h = horizontal
-	i.position.v = vertical
+func (i *Item) setPosition(row int, col int) {
+	i.position.row = row
+	i.position.col = col
 }
 
 func (i Item) inFocus(p Position) bool {
@@ -39,10 +39,10 @@ type KeyMap struct {
 // and item in the palette matrix.
 //
 // Coordinates start in the upper left corner of the screen
-// with Position{h:0, v:0} being the initial coordinate.
+// with Position{row:0, col:0} being the initial coordinate.
 type Position struct {
-	h int // horizontal coordinate
-	v int // vertical coordinate
+	row int
+	col int
 }
 
 type Styles struct {
@@ -62,6 +62,13 @@ func defaultStyles() (s Styles) {
 	return s
 }
 
+type State int
+
+const (
+	initializing State = iota
+	ready
+)
+
 type Model struct {
 	Title string
 
@@ -71,12 +78,17 @@ type Model struct {
 	itemsPerLine int
 	numLines     int
 
+	state  State
 	styles Styles
 	focus  Position
 	KeyMap KeyMap
 	Help   help.Model
 
 	items []Item
+}
+
+func (m *Model) StateReady() {
+	m.state = ready
 }
 
 func New(items []Item, width, height int) Model {
@@ -96,7 +108,7 @@ func New(items []Item, width, height int) Model {
 		height:    height,
 		items:     items,
 		itemWidth: maxItemWidth,
-		focus:     Position{h: 0, v: 0},
+		focus:     Position{row: 0, col: 0},
 		styles:    styles,
 		KeyMap:    defaultKeyMap(),
 		Help:      help.New(),
@@ -155,6 +167,10 @@ func (m Model) View() string {
 		output strings.Builder
 	)
 
+	if m.state == initializing {
+		return "Initializing..."
+	}
+
 	if len(m.items) == 0 {
 		return "No items found"
 	}
@@ -193,29 +209,47 @@ func (m Model) View() string {
 
 // CursorLeft moves the cursor left
 func (m *Model) CursorLeft() {
-	if m.focus.v-1 >= 0 {
-		m.focus.v--
+	if m.focus.col > 0 {
+		m.focus.col--
 	}
 }
 
 // CursorUp moves the cursor up
 func (m *Model) CursorUp() {
-	if m.focus.h-1 >= 0 {
-		m.focus.h--
+	if m.focus.row > 0 {
+		m.focus.row--
 	}
 }
 
 // CursorRight moves the cursor right
 func (m *Model) CursorRight() {
-	if m.focus.v+1 < m.itemsPerLine {
-		m.focus.v++
+	m.focus.col++
+
+	if m.focus.col == m.itemsPerLine {
+		m.focus.col--
+		return
+	}
+
+	if m.focus.row == m.numLines-1 {
+		if len(m.items)%m.itemsPerLine-1 < m.focus.col {
+			m.focus.col--
+		}
 	}
 }
 
 // CursorDown moves the cursor down
 func (m *Model) CursorDown() {
-	if m.focus.h+1 < m.numLines {
-		m.focus.h++
+	m.focus.row++
+
+	if m.focus.row == m.numLines {
+		m.focus.row--
+		return
+	}
+
+	if m.focus.row == m.numLines-1 {
+		if len(m.items)%m.itemsPerLine-1 < m.focus.col {
+			m.focus.row--
+		}
 	}
 }
 
