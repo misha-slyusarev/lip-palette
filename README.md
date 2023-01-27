@@ -1,6 +1,6 @@
 # lip-palette
 
-Terminal UI component that allows you creating a palette (matrix) of items. Based on [lipglos](https://github.com/charmbracelet/lipgloss)
+Terminal UI component that allows you creating a palette (matrix) of items. Based on [Lipgloss](https://github.com/charmbracelet/lipgloss)
 
 # Usage
 
@@ -10,7 +10,7 @@ Get the lip-palette module
 go get github.com/misha-slyusarev/lip-palette@v0.1.0
 ```
 
-Then in your code use it together with [bubbletea](https://github.com/charmbracelet/bubbletea)
+Then in your code use it together with [Bubbletea](https://github.com/charmbracelet/bubbletea)
 ```go
 package ui
 
