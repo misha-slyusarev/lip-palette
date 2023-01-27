@@ -45,6 +45,23 @@ type Position struct {
 	v int // vertical coordinate
 }
 
+type Styles struct {
+	Item       lipgloss.Style
+	ActiveItem lipgloss.Style
+}
+
+func defaultStyles() (s Styles) {
+	s.Item = lipgloss.NewStyle().Bold(true).
+		Margin(2).Padding(1).
+		Foreground(lipgloss.Color("#FAFAFA")).
+		Background(lipgloss.Color("#7D56F4"))
+
+	s.ActiveItem = s.Item.Copy().
+		Background(lipgloss.Color("#94b9f2"))
+
+	return s
+}
+
 type Model struct {
 	Title string
 
@@ -54,6 +71,7 @@ type Model struct {
 	itemsPerLine int
 	numLines     int
 
+	styles Styles
 	focus  Position
 	KeyMap KeyMap
 	Help   help.Model
@@ -69,23 +87,34 @@ func New(items []Item, width, height int) Model {
 		}
 	}
 
+	styles := defaultStyles()
+	maxItemWidth += styles.Item.GetHorizontalPadding() + styles.Item.GetHorizontalMargins()
+
 	m := Model{
-		Title:        "Palette",
-		width:        width,
-		height:       height,
-		items:        items,
-		itemWidth:    maxItemWidth,
-		focus:        Position{h: 0, v: 0},
-		itemsPerLine: int(math.Max(1, float64(width)/float64(maxItemWidth))),
-		numLines:     1,
-		KeyMap:       DefaultKeyMap(),
-		Help:         help.New(),
+		Title:     "Palette",
+		width:     width,
+		height:    height,
+		items:     items,
+		itemWidth: maxItemWidth,
+		focus:     Position{h: 0, v: 0},
+		numLines:  1,
+		styles:    styles,
+		KeyMap:    defaultKeyMap(),
+		Help:      help.New(),
 	}
+
+	m.calcItemsPerLine()
 
 	return m
 }
 
-func DefaultKeyMap() KeyMap {
+// calcItemsPerLine calculates a number of items per line
+// based on scren and item width
+func (m *Model) calcItemsPerLine() {
+	m.itemsPerLine = int(math.Max(1, float64(m.width)/float64(m.itemWidth)))
+}
+
+func defaultKeyMap() KeyMap {
 	return KeyMap{
 		ForceQuit: key.NewBinding(key.WithKeys("ctrl+c")),
 		CursorLeft: key.NewBinding(
@@ -103,20 +132,15 @@ func DefaultKeyMap() KeyMap {
 	}
 }
 
+// SetSize updates various parameters of the model
+// related to the size of the screen and number of
+// elements displayed on the screen
 func (m *Model) SetSize(width, height int) {
 	m.width = width
 	m.height = height
-	m.itemsPerLine = width / m.itemWidth
+	m.calcItemsPerLine()
 	m.numLines = len(m.items) / m.itemsPerLine
 }
-
-var itemStyle = lipgloss.NewStyle().Bold(true).
-	Foreground(lipgloss.Color("#FAFAFA")).
-	Background(lipgloss.Color("#7D56F4"))
-
-var activeItemStyle = lipgloss.NewStyle().Bold(true).
-	Foreground(lipgloss.Color("#FAFAFA")).
-	Background(lipgloss.Color("#94b9f2"))
 
 func (m Model) View() string {
 	var (
@@ -140,14 +164,13 @@ func (m Model) View() string {
 			curItem := m.items[j+i*m.itemsPerLine]
 			curItem.setPosition(j, i) // h: j, v: i
 
-			style := itemStyle.Copy()
+			style := m.styles.Item
 			if curItem.inFocus(m.focus) {
-				style = activeItemStyle.Copy()
+				style = m.styles.ActiveItem
 			}
 
 			itemsRow = lipgloss.JoinHorizontal(lipgloss.Top, itemsRow,
-				style.Width(m.itemWidth+4).Margin(2).Padding(1).
-					Render(curItem.Title),
+				style.Width(m.itemWidth).Render(curItem.Title),
 			)
 		}
 		output.WriteString(itemsRow + "\n\n")
