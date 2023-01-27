@@ -291,6 +291,9 @@ func (m *Model) moveCursor(msg tea.Msg) tea.Cmd {
 		case key.Matches(msg, m.KeyMap.CursorDown):
 			m.CursorDown()
 		}
+
+	case tea.WindowSizeMsg:
+		m.focus = Position{col: 0, row: 0}
 	}
 
 	return tea.Batch(cmds...)
