@@ -1,5 +1,7 @@
 # lip-palette
 
+> **_IMPORTANT:_** This project is a work in progress.
+
 Terminal UI component that allows you creating a palette (matrix) of items. Based on [Lipgloss](https://github.com/charmbracelet/lipgloss)
 
 # Usage
@@ -29,3 +31,10 @@ func (m mainPageModel) Init() tea.Cmd {
 
 ...
 ```
+
+# Example
+
+This project is in experimentation mode right now. Here is an example of me using the library in another project to display 15 objects on the screen and navigate through them.
+
+![](lip-palette_wip.gif)
+
