@@ -179,7 +179,7 @@ func (m Model) View() string {
 		return "No items found"
 	}
 
-	output.WriteString("List of test environments" + "\n\n")
+	output.WriteString("List of items" + "\n\n")
 
 	for lineNumber := 0; lineNumber < m.numLines; lineNumber++ {
 		itemsRow := ""
